@@ -340,12 +340,10 @@ module sys_sm_seq(clk, rstn, overrun_next, sys_sm_next, channel_next, overrun_cu
 	output reg overrun_cur;
 	output reg [2:0] sys_sm_cur;
 	output reg [1:0] channel_cur;
-	output reg [1:0] channel_scan_cur;
 	
 	always @(posedge clk or negedge rstn) begin
 		if(rstn == 0) begin
 			channel_cur <= 0;
-			channel_scan_cur <= 0;
 			overrun_cur <= 0;
 			sys_sm_cur <= `ATTN_CHECK;
 		end else begin

@@ -65,13 +65,13 @@ module testbench;
 		rstn = 1;
 		#100
 		
-		datain_ch0 = 1;
-		#2
-		datain_ch0 = 0;
+		//datain_ch0 = 1;
+		//#2
+		//datain_ch0 = 0;
 		
 
 
-		#2000000 $finish; 
+		#1000000 $finish; 
 	end
  
 	always #1 clk = ~clk;
