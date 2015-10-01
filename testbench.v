@@ -32,6 +32,8 @@ module testbench;
 	reg rstn;
 	reg datain_ch0;
 	reg datain_ch1;
+	reg datain_ch2;
+	reg datain_ch3;
 	integer i;
 	wire serialout;
   
@@ -41,6 +43,9 @@ module testbench;
 		.rstn(rstn),
 		.datain_ch0(datain_ch0),
 		.datain_ch1(datain_ch1),
+		.datain_ch2(datain_ch2),
+		.datain_ch3(datain_ch3),
+		
 		.serialout(serialout)
 	
 	);
@@ -54,6 +59,8 @@ module testbench;
 		rstn = 0;
 		datain_ch0 = 0;
 		datain_ch1 = 0;
+		datain_ch2 = 0;
+		datain_ch3 = 0;
 		#10
 		rstn = 1;
 		#100
@@ -62,7 +69,7 @@ module testbench;
 		#1000000 $finish; 
 	end
  
-	always #5 clk = ~clk;
+	always #1 clk = ~clk;
 
 
 endmodule

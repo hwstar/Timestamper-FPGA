@@ -34,11 +34,13 @@
  *
  */
   
-module root(clk, rstn, datain_ch0, datain_ch1, serialout);
+module root(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialout);
 	input clk;
 	input rstn;
 	input datain_ch0;
 	input datain_ch1;
+	input datain_ch2;
+	input datain_ch3;
 	output serialout;
 	
 	system sys0(
@@ -46,9 +48,12 @@ module root(clk, rstn, datain_ch0, datain_ch1, serialout);
 		.rstn(rstn),
 		.datain_ch0(datain_ch0),
 		.datain_ch1(datain_ch1),
+		.datain_ch2(datain_ch2),
+		.datain_ch3(datain_ch3),
 		.serialout(serialout)
 	
 	);
+
 endmodule
 
 

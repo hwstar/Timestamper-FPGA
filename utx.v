@@ -21,15 +21,17 @@
 
 `default_nettype none
 
+`define BAUDRATE_DIVISOR 433 // Set this to whatever baudrate you need according to the following:
+// divisor == system_clock/desired_baud_rate
+
 `define IDLE 2'b00
 `define SENDSTART 2'b01
 `define SENDBITS 2'b11
 `define SENDSTOP 2'b10
 
-// Generate a one clock cycle wide output every 87 clocks
-// This is a 7 bit synchronous modulo 87 counter
-// The baud rate resulting from a 10MHz clock is 114.943 kbaud
-// which is within 1% of 115.2 kbaud.
+// Generate a one clock cycle wide output every n divisor clocks
+// This is a 7 bit synchronous modulo n counter
+
 
 
 module baudcounter(clk, rstn, arm, baudce);
@@ -38,17 +40,17 @@ module baudcounter(clk, rstn, arm, baudce);
 	input arm;
 	output reg baudce;
 
-	reg [6:0] baudcntr;
+	reg [8:0] baudcntr;
 	
 	always @(*)
-		baudce <= (baudcntr == 86) ? 1'b1 : 1'b0;
+		baudce <= (baudcntr == `BAUDRATE_DIVISOR) ? 1'b1 : 1'b0;
 	
 	always @(posedge clk or negedge rstn) begin
 		if(rstn == 0)
 			baudcntr <= 0;
 		else begin
 			if(arm) begin
-				if(baudcntr == 86)
+				if(baudcntr == `BAUDRATE_DIVISOR)
 					baudcntr <= 0;
 				else	
 					baudcntr <= baudcntr + 1'b1;

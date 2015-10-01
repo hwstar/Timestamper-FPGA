@@ -26,6 +26,7 @@
 // The Lattice ICEstick can support a maximum depth of 9 or 512 bytes
 
 `define FIFO_DEPTH 9 
+//`define FIFO_DEPTH 8 // MAX depth for Lattice design with 4 channels.
 
 // Edge detector
 
