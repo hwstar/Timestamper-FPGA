@@ -38,6 +38,7 @@ module edgedet(clk, rstn, datain, dataout, edgeseen);
 	output reg edgeseen;
 	reg [2:0] shiftreg;
 	reg lastdata;
+	reg initialsent;
 	
 	
 	// After 2 stages of clock synchronization, re-output the data bit
@@ -47,7 +48,9 @@ module edgedet(clk, rstn, datain, dataout, edgeseen);
 		if(rstn == 0) begin
 			edgeseen <= 0;
 			shiftreg <= 3'b000; 
-			lastdata <= 1; // This ensures an initial data bit is written into the FIFO after reset
+			lastdata <= 0; 
+			initialsent <= 0; // This ensures an initial data bit is written into the FIFO after reset
+			
 		end else begin
 			edgeseen <= 0;
 			// Shift once to the right
@@ -55,8 +58,9 @@ module edgedet(clk, rstn, datain, dataout, edgeseen);
 			// Put the unsynchonized data in the msb
 			shiftreg[2] <= datain;
 			// Check for edge
-			if(lastdata ^ shiftreg[0]) begin
+			if((initialsent == 0) | (lastdata ^ shiftreg[0])) begin
 				edgeseen <= 1;
+				initialsent <= 1;
 				lastdata <= shiftreg[0];
 			end	
 		end

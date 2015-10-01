@@ -64,9 +64,14 @@ module testbench;
 		#10
 		rstn = 1;
 		#100
+		
+		datain_ch0 = 1;
+		#2
+		datain_ch0 = 0;
+		
 
 
-		#1000000 $finish; 
+		#2000000 $finish; 
 	end
  
 	always #1 clk = ~clk;

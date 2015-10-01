@@ -85,13 +85,14 @@
 
 // Combinatorial part
 
-module sys_sm_comb(sys_sm_cur, channel_cur, byteaddr, channel_data, hexchar, attention_ch0, 
+module sys_sm_comb(sys_sm_cur, channel_cur, channel_scan, byteaddr, channel_data, hexchar, attention_ch0, 
 attention_ch1, attention_ch2, attention_ch3, overrun_cur, overrun_ch0, overrun_ch1, overrun_ch2, overrun_ch3,
 utxdone, clearoverrun_ch0, clearoverrun_ch1, clearoverrun_ch2, clearoverrun_ch3, txstart, nextbyte,
-overrun_next, unload_ch0, unload_ch1, unload_ch2, unload_ch3, hexnybble,sys_sm_next, channel_next, txdata);
+overrun_next, unload_ch0, unload_ch1, unload_ch2, unload_ch3, next_scan_channel, hexnybble,sys_sm_next, channel_next, txdata);
 
 	input [2:0] sys_sm_cur;
-	input [3:0] channel_cur;
+	input [1:0] channel_cur;
+	input [1:0] channel_scan;
 	input [2:0] byteaddr;
 	input [7:0] channel_data;
 	input [7:0] hexchar;
@@ -116,9 +117,10 @@ overrun_next, unload_ch0, unload_ch1, unload_ch2, unload_ch3, hexnybble,sys_sm_n
 	output reg unload_ch1;
 	output reg unload_ch2;
 	output reg unload_ch3;
+	output reg next_scan_channel;
 	output reg [3:0] hexnybble;
 	output reg [2:0] sys_sm_next;
-	output reg [3:0] channel_next;
+	output reg [1:0] channel_next;
 	output reg [7:0] txdata;
 
 
@@ -137,14 +139,15 @@ overrun_next, unload_ch0, unload_ch1, unload_ch2, unload_ch3, hexnybble,sys_sm_n
 		overrun_next <= overrun_cur;
 		txstart <= 0;
 		nextbyte <= 0;
+		next_scan_channel <= 0;
 		txdata <= 8'h3A;
 		hexnybble <= 0;
 		
 		
 		case(sys_sm_cur)
-			`ATTN_CHECK:			
+			`ATTN_CHECK:
 				// Check channel attention bits
-				if(attention_ch0) begin
+				if((channel_scan == 0) && (attention_ch0)) begin
 					// Save overrun state for later
 					overrun_next <= overrun_ch0;
 					// Clear channel overrun
@@ -155,7 +158,10 @@ overrun_next, unload_ch0, unload_ch1, unload_ch2, unload_ch3, hexnybble,sys_sm_n
 					channel_next <= 0; // Channel 0
 					// Send the header byte
 					txstart <= 1;
-				end else if(attention_ch1) begin	
+					// Next scan channel
+					next_scan_channel <= 1;
+					
+				end else if((channel_scan == 1) && (attention_ch1)) begin	
 					// Save overrun state for later
 					overrun_next <= overrun_ch1;
 					// Clear channel overrun
@@ -166,7 +172,9 @@ overrun_next, unload_ch0, unload_ch1, unload_ch2, unload_ch3, hexnybble,sys_sm_n
 					channel_next <= 1; // Channel 1
 					// Send the header byte
 					txstart <= 1;
-				end else if(attention_ch2) begin	
+					// Next scan channel
+					next_scan_channel <= 1;
+				end else if((channel_scan == 2) && (attention_ch2)) begin	
 					// Save overrun state for later
 					overrun_next <= overrun_ch2;
 					// Clear channel overrun
@@ -177,7 +185,9 @@ overrun_next, unload_ch0, unload_ch1, unload_ch2, unload_ch3, hexnybble,sys_sm_n
 					channel_next <= 2; // Channel 2
 					// Send the header byte
 					txstart <= 1;
-				end else if(attention_ch3) begin	
+					// Next scan channel
+					next_scan_channel <= 1;
+				end else if((channel_scan == 3) &&(attention_ch3)) begin	
 					// Save overrun state for later
 					overrun_next <= overrun_ch3;
 					// Clear channel overrun
@@ -187,9 +197,13 @@ overrun_next, unload_ch0, unload_ch1, unload_ch2, unload_ch3, hexnybble,sys_sm_n
 					// Set the channel we are going to work with
 					channel_next <= 3; // Channel 3
 					// Send the header byte
-					txstart <= 1;							
+					txstart <= 1;	
+					// Next scan channel
+					next_scan_channel <= 1;						
 				end else begin
 					// Nothing to send
+					// Next scan channel
+					next_scan_channel <= 1;
 					sys_sm_next <= `ATTN_CHECK;
 				end
 			
@@ -296,7 +310,7 @@ overrun_next, unload_ch0, unload_ch1, unload_ch2, unload_ch3, hexnybble,sys_sm_n
 			default:
 				begin
 					sys_sm_next <= 3'bxxx;
-					channel_next <= 4'bxxxx;
+					channel_next <= 2'bxx;
 					txdata <= 8'bxxxxxxxx;
 					clearoverrun_ch0 <= 1'bx;
 					clearoverrun_ch1 <= 1'bx;
@@ -322,14 +336,16 @@ module sys_sm_seq(clk, rstn, overrun_next, sys_sm_next, channel_next, overrun_cu
 	input rstn;
 	input overrun_next;
 	input [2:0] sys_sm_next;
-	input [3:0] channel_next;
+	input [1:0] channel_next;
 	output reg overrun_cur;
 	output reg [2:0] sys_sm_cur;
-	output reg [3:0] channel_cur;
+	output reg [1:0] channel_cur;
+	output reg [1:0] channel_scan_cur;
 	
 	always @(posedge clk or negedge rstn) begin
 		if(rstn == 0) begin
 			channel_cur <= 0;
+			channel_scan_cur <= 0;
 			overrun_cur <= 0;
 			sys_sm_cur <= `ATTN_CHECK;
 		end else begin
@@ -347,7 +363,7 @@ module channel_mux(ch0, ch1, ch2, ch3, channel, dataout);
 	input [7:0] ch1;
 	input [7:0] ch2;
 	input [7:0] ch3;
-	input [3:0] channel;
+	input [1:0] channel;
 	output reg [7:0] dataout;
 	
 	always @(*) begin
@@ -454,12 +470,14 @@ module system(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialo
 	wire txstart;
 	wire overrun_cur;
 	wire overrun_next;
+	wire next_scan_channel;
 
 	wire [2:0] sys_sm_cur;
 	wire [2:0] sys_sm_next;
 	wire [2:0] byteaddr;
-	wire [3:0] channel_cur;
-	wire [3:0] channel_next;
+	wire [1:0] channel_cur;
+	wire [1:0] channel_scan;
+	wire [1:0] channel_next;
 	wire [7:0] txdata;
 	wire [7:0] dataout_ch0;
 	wire [7:0] dataout_ch1;
@@ -481,6 +499,16 @@ module system(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialo
 		.count(count)
 		);
 	defparam ctr63.WIDTH = 63;
+	
+	// Scan counter
+	counter ctr2(
+		.clk(clk),
+		.rstn(rstn),
+		.up(next_scan_channel),
+		.down(1'b0),
+		.count(channel_scan)
+		);
+	defparam ctr2.WIDTH = 2;
 	
 	// Instantiate channel 0	
 	channel ch0(
@@ -570,6 +598,7 @@ module system(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialo
 	sys_sm_comb ssc0(
 		.sys_sm_cur(sys_sm_cur),
 		.channel_cur(channel_cur),
+		.channel_scan(channel_scan),
 		.byteaddr(byteaddr),
 		.channel_data(dataout),
 		.attention_ch0(attention_ch0),
@@ -595,6 +624,7 @@ module system(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialo
 		.unload_ch1(unload_ch1),
 		.unload_ch2(unload_ch2),
 		.unload_ch3(unload_ch3),
+		.next_scan_channel(next_scan_channel),
 		.sys_sm_next(sys_sm_next),
 		.channel_next(channel_next),
 		.txdata(txdata),
