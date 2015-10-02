@@ -20,9 +20,8 @@
  */
 
 `default_nettype none
+`include "config.h"
 
-`define BAUDRATE_DIVISOR 433 // Set this to whatever baudrate you need according to the following:
-// divisor == system_clock/desired_baud_rate
 
 `define IDLE 2'b00
 `define SENDSTART 2'b01
@@ -40,7 +39,7 @@ module baudcounter(clk, rstn, arm, baudce);
 	input arm;
 	output reg baudce;
 
-	reg [8:0] baudcntr;
+	reg [10:0] baudcntr;
 	
 	always @(*)
 		baudce <= (baudcntr == `BAUDRATE_DIVISOR) ? 1'b1 : 1'b0;
