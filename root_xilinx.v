@@ -108,7 +108,7 @@ module root(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialout
 	);
 	
 	assign locked = locked_int;
-	assign rstn_int = rstn & ~locked_int;
+	assign rstn_int = rstn & locked_int;
 
 endmodule
 
