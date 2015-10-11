@@ -22,52 +22,76 @@
 `default_nettype none
 `include "config.h"
 
-// Edge detector
+//
+//
+// This module implements a 2 flop input synchronization and a crude 3 flop digital filter. 
+// The output state will not change unless the input is high or low for 3 clock cycles.
+//
 
-module edgedet(clk, rstn, datain, dataout, edgeseen);
+module digitalfilter(out, clk, rstn, in);
+	output reg out;
+	input clk;
+	input rstn;
+	input in;
+	reg [4:0] taps;
+	reg result;
+	
+ 
+	always @(posedge clk or negedge rstn) begin
+		if(rstn == 0) begin
+			taps <= 0;
+			out <= 0;
+		end else begin
+			taps[4] <= taps[3];
+			taps[3] <= taps[2];
+			taps[2] <= taps[1];
+			taps[1] <= taps[0];
+			taps[0] <= in;
+			if(taps[2] & taps[3] & taps[4])
+				out <= 1;
+			if(~taps[2] & ~taps[3] & ~taps[4])
+				out <= 0;
+		end
+	end
+endmodule
+
+// Edge detector with inital state output
+
+module edgedet(clk, rstn, datain, edgeseen);
 	input clk;
 	input rstn;
 	input datain;
-	output dataout;
 	output reg edgeseen;
-	reg [2:0] shiftreg;
 	reg lastdata;
-	reg [2:0] count;
+	reg [3:0] count;
 	
-	
-	// After 2 stages of clock synchronization, re-output the data bit
-	assign dataout = shiftreg[2];
 	
 	always @(posedge clk or negedge rstn) begin
 		if(rstn == 0) begin
 			edgeseen <= 0;
-			shiftreg <= 3'b000; 
 			lastdata <= 0; 
-			count  <= 3'b000; // This counter ensures an initial data bit is written into the FIFO after reset
+			count  <= 4'b0000; // This counter ensures an initial data bit is written into the FIFO after reset
 			
 		end else begin
 			edgeseen <= 0;
 			// Shift once to the right
-			shiftreg[1:0] <= shiftreg[2:1];
-			// Put the unsynchronized data in the msb
-			shiftreg[2] <= datain;
 			// Check for edge
 			
-			if(count < 7) begin // Count if less than 7
-			    lastdata <= shiftreg[0];
+			if(count < 15) begin // Count if less than 15
+			    lastdata <= datain;
 				count <= count + 1'b1;
 			end
 			
 	
-			if(count == 5) begin
-				edgeseen <= 1; // Record initial state
+			if(count == 13) begin
+				edgeseen <= 1; // Record initial state after initial signal state propagates through the digital filter
 			end
 			
 				
 	
-			if((count == 7)  && (lastdata ^ shiftreg[0])) begin
+			if((count == 15)  && (lastdata ^ datain)) begin
 				edgeseen <= 1; // Input state changed
-				lastdata <= shiftreg[0]; // Save the input state
+				lastdata <= datain; // Save the input state
 			end	
 		end
 	end
@@ -79,7 +103,7 @@ endmodule
 */	
 
 
-module channel(clk, rstn, datain, unload, counterin, byteaddr, clearoverrun, overrun, attention, dataout);
+module channel(clk, rstn, datain, unload, counterin, byteaddr, clearoverrun, overrun, attention, dataout, testouta, testoutb);
 	input clk;			// Counter and fifo clock
 	input rstn;			// Global reset, low true
 	input datain;		// Data bit in
@@ -90,11 +114,13 @@ module channel(clk, rstn, datain, unload, counterin, byteaddr, clearoverrun, ove
 	output overrun;		// Indicates an overrun condition occurred
 	output attention;	// Indicates there is something needing attention
 	output[7:0] dataout; // byte data out
+	output testouta;
+	output testoutb;
 
 	
 	wire empty;
 	wire full;
-	wire datain_sync;
+	wire datain_filt;
 	wire [`FIFO_DEPTH-1:0] itemsinfifo;
 	wire [63:0] fifooutputword;
 	wire [63:0] fifoinputword;
@@ -103,13 +129,21 @@ module channel(clk, rstn, datain, unload, counterin, byteaddr, clearoverrun, ove
 	
 	reg overrun_int;
 	reg attention_delayed;
+	
+	// Instantiate digital filter
+	digitalfilter df0(
+		.clk(clk),
+		.rstn(rstn),
+		.in(datain),
+		.out(datain_filt)
+	);
+		
 
 	// Instantiate an edge detector
 	edgedet ed0(
 		.clk(clk),
 		.rstn(rstn),
-		.datain(datain),
-		.dataout(datain_sync),
+		.datain(datain_filt),
 		.edgeseen(loaden)
 	);
 	
@@ -139,7 +173,7 @@ module channel(clk, rstn, datain, unload, counterin, byteaddr, clearoverrun, ove
 	
 	// Merge the data and the free running counter
 	// The data is in the lsb
-	assign fifoinputword = {counterin, datain_sync};
+	assign fifoinputword = {counterin, datain_filt};
 	
 	// Set attention if the FIFO isn't empty, or there was an overrun condition
 	assign attention_int = ~empty | overrun_int;
@@ -147,6 +181,13 @@ module channel(clk, rstn, datain, unload, counterin, byteaddr, clearoverrun, ove
 	assign attention = attention_delayed;
 	// Set the external overun bit to the internal state
 	assign overrun = overrun_int;
+	
+	// Testouta to fifo load enable
+	assign testouta = loaden;
+	
+	// Testoutb to fifo unload enable
+	assign testoutb = unload;
+	
 
 	// This detects and latches a FIFO overrun condition
 	// and delays attention by one clock

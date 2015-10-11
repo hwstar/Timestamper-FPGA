@@ -436,7 +436,7 @@ endmodule
 * no device specific code is in this module, that is all done in the root module.
 */
 
-module system(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialout);
+module system(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialout, testout0, testout1, testout2, testout3);
 	input clk;				// Counter and fifo clock
 	input rstn;				// Global reset, low true
 	input datain_ch0;		// Channel 0 Data bit input
@@ -444,6 +444,10 @@ module system(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialo
 	input datain_ch2;		// Channel 2 Data bit input
 	input datain_ch3;		// Channel 3 Data bit input		
 	output serialout;   	// Async serial data out
+	output testout0;
+	output testout1;
+	output testout2;
+	output testout3;
 	
 
 	
@@ -519,7 +523,9 @@ module system(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialo
 		.clearoverrun(clearoverrun_ch0),
 		.overrun(overrun_ch0),
 		.attention(attention_ch0),
-		.dataout(dataout_ch0)
+		.dataout(dataout_ch0),
+		.testouta(testout0),
+		.testoutb(testout2)
 		);
 		
 		
@@ -534,7 +540,9 @@ module system(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialo
 		.clearoverrun(clearoverrun_ch1),
 		.overrun(overrun_ch1),
 		.attention(attention_ch1),
-		.dataout(dataout_ch1)
+		.dataout(dataout_ch1),
+		.testouta(testout1),
+		.testoutb(testout3)
 		);
 		
 		// Instantiate channel 2	

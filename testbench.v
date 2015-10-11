@@ -21,7 +21,7 @@
 
 // A parallel input shift register clocked on falling edge
 `default_nettype none
-`timescale 10ns/1ns
+`timescale 1ns/1ns
 
 // Main test module        
   
@@ -36,6 +36,10 @@ module testbench;
 	reg datain_ch3;
 	integer i;
 	wire serialout;
+	wire testout0;
+	wire testout1;
+	wire testout2;
+	wire testout3;
   
 	
 	root test_root(
@@ -46,8 +50,11 @@ module testbench;
 		.datain_ch2(datain_ch2),
 		.datain_ch3(datain_ch3),
 		
-		.serialout(serialout)
-	
+		.serialout(serialout),
+		.testout0(testout0),
+		.testout1(testout1),
+		.testout2(testout2),
+		.testout3(testout3)
 	);
 
 
@@ -63,7 +70,15 @@ module testbench;
 		datain_ch3 = 0;
 		#10
 		rstn = 1;
-		#100
+		#5000000
+		datain_ch1 = 1;
+		#1090
+		datain_ch0 = 1;
+		#610
+		datain_ch0 = 0;
+		#8300
+		datain_ch1 = 0;
+	
 		
 		//datain_ch0 = 1;
 		//#2
@@ -71,10 +86,10 @@ module testbench;
 		
 
 
-		#1000000 $finish; 
+		#10000000 $finish; 
 	end
  
-	always #1 clk = ~clk;
+	always #5 clk = ~clk;
 
 
 endmodule

@@ -34,7 +34,7 @@
  *
  */
   
-module root(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialout, clk20, locked);
+module root(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialout, clk20, locked, testout0, testout1, testout2, testout3);
 	input clk;
 	input rstn;
 	input datain_ch0;
@@ -44,6 +44,10 @@ module root(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialout
 	output clk20;
 	output locked;
 	output serialout;
+	output testout0;
+	output testout1;
+	output testout2;
+	output testout3;
 	wire fbouttofbin;
 	wire clk100;
 	wire rstn_int;
@@ -60,7 +64,11 @@ module root(clk, rstn, datain_ch0, datain_ch1, datain_ch2, datain_ch3, serialout
 		.datain_ch1(datain_ch1),
 		.datain_ch2(datain_ch2),
 		.datain_ch3(datain_ch3),
-		.serialout(serialout)
+		.serialout(serialout),
+		.testout0(testout0),
+		.testout1(testout1),
+		.testout2(testout2),
+		.testout3(testout3)
 	
 	);
 	
